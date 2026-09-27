@@ -26,14 +26,73 @@ main:
   xorb %al, %al
   call scanf
 
-  movb op, ??? # TODO: load the operation for comparisons
-  movq a, ???  # TODO: and the LHS
+  movb op, %r8b
+  movq a, %r9
 
-  # TODO: Analyze operation and execute
+cmpb $'+', %r8b
+je add_op
 
-  # TODO: Print result
+cmpb $'-', %r8b
+je sub_op
 
-  # TODO: Print error if operation cannot be (safely) performed
+cmpb $'*', %r8b
+je mul_op
+
+cmpb $'/', %r8b
+je div_op
+
+jmp unknown_op
+
+add_op:
+	addq b, %r9
+	jmp print_result
+
+sub_op:
+	subq b, %r9
+	jmp print_result
+mul_op:
+	imulq b, %r9
+	jmp print_result
+
+div_op:
+	cmpq $0, b
+	je division_error
+
+	movq %r9, %rax
+	cqto
+
+	idivq b
+
+	movq %rax, %r9
+	jmp print_result
+
+print_result:
+	movq  $output_fmt, %rdi
+	movq %r9, %rsi
+	xorb %al, %al
+	call printf
+
+	movq $0, %rax
+	leave
+	ret
+
+unknown_op:
+	movq $unknown_msg, %rdi
+        xorb %al, %al
+        call printf
+
+        movq $1, %rax
+        leave
+        ret
+
+division_error:
+	movq $division_msg, %rdi
+	xorb %al, %al
+	call printf
+
+	movq $1, %rax
+	leave
+	ret
 
   # if (op_char == '+') {
   #   ...
@@ -57,6 +116,10 @@ main:
 
 output_fmt: 
   .asciz "%ld\n"
+unknown_msg:
+  .asciz "Unknown operation\n"
+division_msg:
+  .asciz "Divided by 0\n"
 scanf_fmt: 
   .asciz "%ld %c %ld"  # TODO: modify as needed
 
